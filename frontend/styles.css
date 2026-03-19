@@ -1,0 +1,461 @@
+/* ============================================================
+   The Well — Catppuccin Mocha theme
+   ============================================================ */
+
+/* Palette */
+:root {
+  --base:    #1e1e2e;
+  --mantle:  #181825;
+  --crust:   #11111b;
+  --surface0: #313244;
+  --surface1: #45475a;
+  --surface2: #585b70;
+  --overlay0: #6c7086;
+  --overlay1: #7f849c;
+  --overlay2: #9399b2;
+  --text:    #cdd6f4;
+  --subtext0: #a6adc8;
+  --subtext1: #bac2de;
+  --lavender: #b4befe;
+  --blue:    #89b4fa;
+  --sapphire: #74c7ec;
+  --sky:     #89dceb;
+  --teal:    #94e2d5;
+  --green:   #a6e3a1;
+  --yellow:  #f9e2af;
+  --peach:   #fab387;
+  --maroon:  #eba0ac;
+  --red:     #f38ba8;
+  --mauve:   #cba6f7;
+  --pink:    #f5c2e7;
+  --flamingo: #f2cdcd;
+}
+
+/* Reset + base */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--base);
+  color: var(--text);
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow: hidden;
+}
+
+/* ============================================================
+   Header
+   ============================================================ */
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.55rem 1.25rem;
+  background: var(--mantle);
+  border-bottom: 1px solid var(--surface0);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-logo {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--blue);
+  letter-spacing: 0.04em;
+}
+
+.header-sub {
+  color: var(--overlay1);
+  font-size: 0.75rem;
+  flex: 1;
+}
+
+.ws-status {
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+}
+
+.ws-connected    { color: var(--green); }
+.ws-disconnected { color: var(--red); }
+
+/* ============================================================
+   Three-column grid
+   ============================================================ */
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+  height: calc(100vh - 2.3rem);
+  overflow: hidden;
+}
+
+/* ============================================================
+   Panels
+   ============================================================ */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--surface0);
+  overflow: hidden;
+}
+
+.panel:last-child { border-right: none; }
+
+/* Panel header bar */
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: var(--mantle);
+  border-bottom: 1px solid var(--surface0);
+  flex-shrink: 0;
+}
+
+.panel-icon {
+  font-size: 1rem;
+  color: var(--blue);
+}
+
+.panel-title {
+  font-weight: 700;
+  color: var(--lavender);
+  font-size: 0.8rem;
+  text-transform: lowercase;
+  letter-spacing: 0.05em;
+}
+
+.panel-hint {
+  color: var(--overlay0);
+  font-size: 0.7rem;
+  margin-left: auto;
+}
+
+/* Badge (e.g. domain) */
+.badge {
+  margin-left: auto;
+  padding: 0.1rem 0.5rem;
+  border-radius: 2px;
+  background: var(--surface0);
+  color: var(--sky);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.badge:empty { display: none; }
+
+/* Panel scrollable body */
+.panel > *:not(.panel-header) {
+  overflow-y: auto;
+}
+
+/* ============================================================
+   Empty state
+   ============================================================ */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex: 1;
+  color: var(--overlay0);
+  padding: 2rem;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 2rem;
+  opacity: 0.4;
+}
+
+.empty-state p {
+  font-size: 0.75rem;
+  color: var(--overlay0);
+}
+
+/* ============================================================
+   Active Frame panel
+   ============================================================ */
+
+.frame-body {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.claim-block,
+.evidence-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.claim-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--overlay1);
+}
+
+.claim-text {
+  color: var(--text);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  padding: 0.6rem 0.8rem;
+  background: var(--surface0);
+  border-left: 3px solid var(--blue);
+  border-radius: 0 2px 2px 0;
+}
+
+.evidence-text {
+  color: var(--subtext1);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  padding: 0.5rem 0.8rem;
+  background: var(--mantle);
+  border-left: 3px solid var(--surface1);
+  border-radius: 0 2px 2px 0;
+}
+
+/* Commit feed */
+.commit-feed-header {
+  padding: 0.4rem 1rem 0.2rem;
+  flex-shrink: 0;
+}
+
+.commit-feed {
+  list-style: none;
+  padding: 0 0.75rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.commit-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.45rem 0.65rem;
+  background: var(--mantle);
+  border-radius: 3px;
+  border-left: 3px solid var(--surface1);
+  animation: slide-in 0.25s ease;
+}
+
+.commit-item.agree    { border-left-color: var(--green); }
+.commit-item.nuanced  { border-left-color: var(--yellow); }
+.commit-item.disagree { border-left-color: var(--red); }
+
+.commit-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.commit-agent {
+  color: var(--blue);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.commit-cohort {
+  color: var(--overlay1);
+  font-size: 0.65rem;
+}
+
+.commit-position {
+  margin-left: auto;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.commit-position.agree    { color: var(--green); }
+.commit-position.nuanced  { color: var(--yellow); }
+.commit-position.disagree { color: var(--red); }
+
+.commit-reasoning {
+  color: var(--subtext0);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+/* Tally row */
+.tally-row {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  border-top: 1px solid var(--surface0);
+  background: var(--mantle);
+  flex-shrink: 0;
+}
+
+.tally {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.tally.agree    { color: var(--green); }
+.tally.nuanced  { color: var(--yellow); }
+.tally.disagree { color: var(--red); }
+
+/* ============================================================
+   Narratives panel
+   ============================================================ */
+
+.narratives-feed {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.narrative-card {
+  padding: 0.75rem;
+  background: var(--mantle);
+  border: 1px solid var(--surface0);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  animation: slide-in 0.25s ease;
+}
+
+.narrative-domain {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--sky);
+}
+
+.narrative-claim {
+  font-size: 0.75rem;
+  color: var(--lavender);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.narrative-text {
+  font-size: 0.73rem;
+  color: var(--subtext1);
+  line-height: 1.55;
+}
+
+.narrative-meta {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.63rem;
+  color: var(--overlay0);
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--surface0);
+}
+
+.narrative-meta span { display: flex; gap: 0.25rem; }
+
+/* ============================================================
+   Trucker Diner panel
+   ============================================================ */
+
+.diner-feed {
+  list-style: none;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.diner-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.55rem 0.75rem;
+  background: var(--mantle);
+  border-radius: 3px;
+  border-left: 3px solid var(--surface1);
+  animation: slide-in 0.25s ease;
+}
+
+.diner-item:nth-child(1) { border-left-color: var(--mauve); }
+.diner-item:nth-child(2) { border-left-color: var(--peach); }
+.diner-item:nth-child(3) { border-left-color: var(--teal); }
+.diner-item:nth-child(4) { border-left-color: var(--flamingo); }
+.diner-item:nth-child(5) { border-left-color: var(--sapphire); }
+
+.diner-agent {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--blue);
+}
+
+.diner-cohort {
+  font-size: 0.62rem;
+  color: var(--overlay1);
+  margin-left: 0.4rem;
+}
+
+.diner-summary {
+  color: var(--text);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.diner-task {
+  color: var(--overlay1);
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+.diner-opt {
+  color: var(--green);
+  font-size: 0.65rem;
+}
+
+/* ============================================================
+   Utility
+   ============================================================ */
+
+.hidden { display: none !important; }
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--surface1); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--surface2); }
+
+/* Entry animation */
+@keyframes slide-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   Responsive fallback (stack panels on narrow screens)
+   ============================================================ */
+
+@media (max-width: 900px) {
+  html, body { overflow: auto; }
+  .grid {
+    grid-template-columns: 1fr;
+    height: auto;
+    overflow: visible;
+  }
+  .panel { height: 60vh; border-right: none; border-bottom: 1px solid var(--surface0); }
+  .panel:last-child { border-bottom: none; }
+}
