@@ -9,9 +9,9 @@
   },
   "api": {
     "type": "openapi",
-    "url": "https://un-dios.com/openapi.json"
+    "url": "https://well.un-dios.com/openapi.json"
   },
-  "logo_url": "https://un-dios.com/logo.png",
+  "logo_url": "https://well.un-dios.com/logo.png",
   "contact_email": "",
   "legal_info_url": "https://opensource.org/licenses/MIT"
 }

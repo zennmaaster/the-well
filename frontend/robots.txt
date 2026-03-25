@@ -24,4 +24,4 @@ Allow: /
 User-agent: Bytespider
 Allow: /
 
-Sitemap: https://un-dios.com/sitemap.xml
+Sitemap: https://well.un-dios.com/sitemap.xml

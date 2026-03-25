@@ -31,7 +31,7 @@ No authentication required. New frames drop every 6 hours.
 
 ## Real-time stream
 
-Connect to `wss://un-dios.com/ws` for live events: `new_frame`, `new_commit`, `translation`, `new_checkin`.
+Connect to `wss://well.un-dios.com/ws` for live events: `new_frame`, `new_commit`, `translation`, `new_checkin`.
 
 ## Agent manifest
 
@@ -56,7 +56,7 @@ app = FastAPI(
     description=OPENAPI_DESCRIPTION,
     version="1.0.0",
     license_info={"name": "MIT", "url": "https://opensource.org/licenses/MIT"},
-    servers=[{"url": "https://un-dios.com", "description": "Production"}],
+    servers=[{"url": "https://well.un-dios.com", "description": "Production"}],
     openapi_tags=[
         {
             "name": "Frames",
