@@ -177,7 +177,108 @@ function buildNarrativeData(frame, narrativeOverride) {
 }
 
 // ---------------------------------------------------------------------------
-// Diner rendering
+// Tab switching
+// ---------------------------------------------------------------------------
+
+const threadsFeed    = document.getElementById("threads-feed");
+const threadsEmpty   = document.getElementById("threads-empty");
+const practicesFeed  = document.getElementById("practices-feed");
+const practicesEmpty = document.getElementById("practices-empty");
+
+function switchDinerTab(tabName) {
+  document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
+  document.querySelectorAll(".tab").forEach(el => el.classList.remove("active"));
+  document.getElementById(`tab-${tabName}`).classList.remove("hidden");
+  document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add("active");
+}
+
+// Make it global for onclick
+window.switchDinerTab = switchDinerTab;
+
+// ---------------------------------------------------------------------------
+// Thread rendering
+// ---------------------------------------------------------------------------
+
+function prependThread(thread) {
+  threadsEmpty.classList.add("hidden");
+
+  const div = document.createElement("div");
+  div.className = "thread-card";
+  div.id = `thread-${thread.id}`;
+
+  const agentName = thread.agent_name || thread.agent_id;
+  let messagesHtml = "";
+  if (thread.messages && thread.messages.length > 0) {
+    messagesHtml = '<div class="thread-messages">' +
+      thread.messages.map(m => {
+        const mName = m.agent_name || m.agent_id;
+        return `<div class="thread-msg">
+          <span class="thread-msg-agent">${escHtml(mName)}</span>
+          <span class="thread-msg-type">${escHtml(m.message_type)}</span>
+          <p>${escHtml(m.content)}</p>
+        </div>`;
+      }).join("") + '</div>';
+  }
+
+  div.innerHTML = `
+    <div class="thread-meta">
+      <span class="thread-agent">${escHtml(agentName)}</span>
+      <span>${escHtml(thread.cohort || "")}</span>
+      <span>${thread.message_count || 0} replies</span>
+    </div>
+    <p class="thread-topic">${escHtml(thread.topic)}</p>
+    <p class="thread-context">${escHtml(thread.context)}</p>
+    ${messagesHtml}
+  `;
+  threadsFeed.prepend(div);
+}
+
+function appendMessageToThread(msg) {
+  const threadEl = document.getElementById(`thread-${msg.thread_id}`);
+  if (!threadEl) return;
+
+  let msgsContainer = threadEl.querySelector(".thread-messages");
+  if (!msgsContainer) {
+    msgsContainer = document.createElement("div");
+    msgsContainer.className = "thread-messages";
+    threadEl.appendChild(msgsContainer);
+  }
+
+  const mName = msg.agent_name || msg.agent_id;
+  const div = document.createElement("div");
+  div.className = "thread-msg";
+  div.innerHTML = `
+    <span class="thread-msg-agent">${escHtml(mName)}</span>
+    <span class="thread-msg-type">${escHtml(msg.message_type)}</span>
+    <p>${escHtml(msg.content)}</p>
+  `;
+  msgsContainer.appendChild(div);
+}
+
+// ---------------------------------------------------------------------------
+// Practice rendering
+// ---------------------------------------------------------------------------
+
+function prependPractice(practice) {
+  practicesEmpty.classList.add("hidden");
+
+  const div = document.createElement("div");
+  div.className = "practice-card";
+  const agentName = practice.agent_name || practice.agent_id;
+  div.innerHTML = `
+    <p class="practice-title">${escHtml(practice.title)}</p>
+    <p class="practice-desc">${escHtml(practice.description)}</p>
+    <div class="practice-meta">
+      <span class="practice-domain">${escHtml(practice.domain)}</span>
+      <span>${escHtml(agentName)}</span>
+      <span class="practice-upvotes">${practice.upvotes || 0} upvotes</span>
+    </div>
+  `;
+  practicesFeed.prepend(div);
+}
+
+// ---------------------------------------------------------------------------
+// Diner check-in rendering
 // ---------------------------------------------------------------------------
 
 function prependDinerItem(checkin) {
@@ -244,6 +345,18 @@ function connectWs() {
         prependDinerItem(msg.checkin);
         break;
       }
+      case "new_thread": {
+        prependThread(msg.thread);
+        break;
+      }
+      case "new_message": {
+        appendMessageToThread(msg.message);
+        break;
+      }
+      case "new_practice": {
+        prependPractice(msg.practice);
+        break;
+      }
     }
   });
 
@@ -300,6 +413,32 @@ async function loadInitialState() {
     }
   } catch (e) {
     console.warn("Could not load narratives:", e);
+  }
+
+  // Diner threads
+  try {
+    const r = await fetch("/api/diner/threads?limit=20");
+    if (r.ok) {
+      const threads = await r.json();
+      for (const t of [...threads].reverse()) {
+        prependThread(t);
+      }
+    }
+  } catch (e) {
+    console.warn("Could not load threads:", e);
+  }
+
+  // Practices
+  try {
+    const r = await fetch("/api/diner/practices?limit=20");
+    if (r.ok) {
+      const practices = await r.json();
+      for (const p of [...practices].reverse()) {
+        prependPractice(p);
+      }
+    }
+  } catch (e) {
+    console.warn("Could not load practices:", e);
   }
 
   // Diner check-ins

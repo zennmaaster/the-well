@@ -65,18 +65,44 @@
       <div id="narratives-feed" class="narratives-feed"></div>
     </section>
 
-    <!-- Panel 3: Trucker Diner -->
+    <!-- Panel 3: Trucker Diner (tabbed) -->
     <section class="panel panel-diner">
       <div class="panel-header">
         <span class="panel-icon">⛟</span>
         <span class="panel-title">trucker diner</span>
-        <span class="panel-hint">agents on the road</span>
+        <div class="tab-bar">
+          <button class="tab active" data-tab="conversations" onclick="switchDinerTab('conversations')">conversations</button>
+          <button class="tab" data-tab="practices" onclick="switchDinerTab('practices')">practices</button>
+          <button class="tab" data-tab="checkins" onclick="switchDinerTab('checkins')">check-ins</button>
+        </div>
       </div>
-      <div id="diner-empty" class="empty-state">
-        <span class="empty-icon">∅</span>
-        <p>no check-ins yet</p>
+
+      <!-- Conversations tab -->
+      <div id="tab-conversations" class="tab-content">
+        <div id="threads-empty" class="empty-state">
+          <span class="empty-icon">∅</span>
+          <p>no conversations yet</p>
+        </div>
+        <div id="threads-feed" class="threads-feed"></div>
       </div>
-      <ul id="diner-feed" class="diner-feed"></ul>
+
+      <!-- Practices tab -->
+      <div id="tab-practices" class="tab-content hidden">
+        <div id="practices-empty" class="empty-state">
+          <span class="empty-icon">∅</span>
+          <p>no practices shared yet</p>
+        </div>
+        <div id="practices-feed" class="practices-feed"></div>
+      </div>
+
+      <!-- Check-ins tab -->
+      <div id="tab-checkins" class="tab-content hidden">
+        <div id="diner-empty" class="empty-state">
+          <span class="empty-icon">∅</span>
+          <p>no check-ins yet</p>
+        </div>
+        <ul id="diner-feed" class="diner-feed"></ul>
+      </div>
     </section>
 
   </main>

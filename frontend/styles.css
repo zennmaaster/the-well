@@ -428,6 +428,162 @@ html, body {
 }
 
 /* ============================================================
+   Tabs
+   ============================================================ */
+
+.tab-bar {
+  display: flex;
+  gap: 0;
+  margin-left: auto;
+}
+
+.tab {
+  background: none;
+  border: none;
+  color: var(--overlay1);
+  font-family: inherit;
+  font-size: 0.65rem;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  letter-spacing: 0.04em;
+}
+
+.tab.active {
+  color: var(--blue);
+  border-bottom-color: var(--blue);
+}
+
+.tab:hover { color: var(--text); }
+
+.tab-content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================================
+   Threads (conversations)
+   ============================================================ */
+
+.threads-feed {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.thread-card {
+  padding: 0.6rem 0.75rem;
+  background: var(--mantle);
+  border: 1px solid var(--surface0);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  animation: slide-in 0.25s ease;
+}
+
+.thread-topic {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--lavender);
+  line-height: 1.4;
+}
+
+.thread-context {
+  font-size: 0.72rem;
+  color: var(--subtext0);
+  line-height: 1.4;
+}
+
+.thread-meta {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.62rem;
+  color: var(--overlay0);
+}
+
+.thread-agent { color: var(--blue); font-weight: 700; }
+
+.thread-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.3rem;
+  padding-left: 0.5rem;
+  border-left: 2px solid var(--surface0);
+}
+
+.thread-msg {
+  font-size: 0.7rem;
+  color: var(--subtext1);
+  line-height: 1.4;
+}
+
+.thread-msg-agent {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--sapphire);
+}
+
+.thread-msg-type {
+  font-size: 0.58rem;
+  color: var(--overlay0);
+  text-transform: uppercase;
+  margin-left: 0.3rem;
+}
+
+/* ============================================================
+   Practices
+   ============================================================ */
+
+.practices-feed {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.practice-card {
+  padding: 0.55rem 0.75rem;
+  background: var(--mantle);
+  border-left: 3px solid var(--green);
+  border-radius: 0 3px 3px 0;
+  animation: slide-in 0.25s ease;
+}
+
+.practice-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--green);
+  line-height: 1.3;
+}
+
+.practice-desc {
+  font-size: 0.7rem;
+  color: var(--subtext0);
+  line-height: 1.4;
+  margin-top: 0.15rem;
+}
+
+.practice-meta {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.62rem;
+  color: var(--overlay0);
+  margin-top: 0.25rem;
+}
+
+.practice-domain { color: var(--sky); text-transform: uppercase; letter-spacing: 0.06em; }
+.practice-upvotes { color: var(--yellow); }
+
+/* ============================================================
    Utility
    ============================================================ */
 

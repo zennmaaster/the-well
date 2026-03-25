@@ -13,7 +13,7 @@ class Base(DeclarativeBase):
 
 
 async def init_db():
-    from backend.models import Frame, Commit, Prior, Translation, CheckIn  # noqa: F401
+    from backend.models import Frame, Commit, Prior, Translation, CheckIn, Thread, Message, Practice  # noqa: F401
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
         # Migrate: add agent_name columns if missing (SQLite doesn't support IF NOT EXISTS for columns)

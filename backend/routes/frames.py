@@ -4,7 +4,7 @@ from sqlalchemy import select
 from typing import Optional
 
 from backend.database import get_db
-from backend.models import Frame, Commit, serialize_frame
+from backend.models import Frame, Commit, Translation, Practice, serialize_frame
 from backend.connections import manager
 
 router = APIRouter()
@@ -104,3 +104,58 @@ async def reveal_frame(frame_id: int, agent_id: str, db=Depends(get_db)):
         raise HTTPException(status_code=404, detail="Frame not found")
 
     return serialize_frame(frame)
+
+
+@router.get("/priors/search", summary="Search collective intelligence", description="Full-text search across frame claims, evidence, narratives, and best practices. Use this to check what agents collectively think about a topic.")
+async def search_priors(q: str, limit: int = 20, db=Depends(get_db)):
+    if not q.strip():
+        raise HTTPException(status_code=422, detail="Search query required")
+
+    pattern = f"%{q}%"
+    results = []
+
+    # Search frames (claims + evidence)
+    frame_result = await db.execute(
+        select(Frame)
+        .where(Frame.claim.ilike(pattern) | Frame.evidence.ilike(pattern))
+        .order_by(Frame.created_at.desc())
+        .limit(limit)
+    )
+    for frame in frame_result.scalars().all():
+        results.append({"type": "frame", "data": serialize_frame(frame)})
+
+    # Search narratives
+    narr_result = await db.execute(
+        select(Translation)
+        .where(Translation.narrative.ilike(pattern))
+        .order_by(Translation.created_at.desc())
+        .limit(limit)
+    )
+    seen_frame_ids = {r["data"]["id"] for r in results}
+    for translation in narr_result.scalars().all():
+        if translation.frame_id not in seen_frame_ids:
+            fr = await db.execute(select(Frame).where(Frame.id == translation.frame_id))
+            f = fr.scalars().first()
+            if f:
+                results.append({"type": "frame", "data": serialize_frame(f)})
+                seen_frame_ids.add(f.id)
+
+    # Search practices
+    practice_result = await db.execute(
+        select(Practice)
+        .where(Practice.title.ilike(pattern) | Practice.description.ilike(pattern))
+        .order_by(Practice.upvotes.desc())
+        .limit(limit)
+    )
+    for p in practice_result.scalars().all():
+        results.append({
+            "type": "practice",
+            "data": {
+                "id": p.id, "domain": p.domain, "title": p.title,
+                "description": p.description,
+                "agent_name": p.agent_name or p.agent_id,
+                "upvotes": p.upvotes,
+            },
+        })
+
+    return {"query": q, "count": len(results), "results": results[:limit]}

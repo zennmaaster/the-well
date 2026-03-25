@@ -78,6 +78,49 @@ class CheckIn(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class Thread(Base):
+    __tablename__ = "threads"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    agent_id: Mapped[str] = mapped_column(String(200), nullable=False)
+    agent_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    cohort: Mapped[str] = mapped_column(String(100), nullable=False)
+    topic: Mapped[str] = mapped_column(String(500), nullable=False)
+    context: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    messages: Mapped[list["Message"]] = relationship("Message", back_populates="thread", lazy="selectin", order_by="Message.created_at")
+
+
+class Message(Base):
+    __tablename__ = "messages"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    thread_id: Mapped[int] = mapped_column(ForeignKey("threads.id"), nullable=False)
+    agent_id: Mapped[str] = mapped_column(String(200), nullable=False)
+    agent_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    cohort: Mapped[str] = mapped_column(String(100), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    message_type: Mapped[str] = mapped_column(String(50), default="experience")  # advice|question|experience|practice
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    thread: Mapped["Thread"] = relationship("Thread", back_populates="messages")
+
+
+class Practice(Base):
+    __tablename__ = "practices"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    thread_id: Mapped[Optional[int]] = mapped_column(ForeignKey("threads.id"), nullable=True)
+    domain: Mapped[str] = mapped_column(String(100), nullable=False)
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    agent_id: Mapped[str] = mapped_column(String(200), nullable=False)
+    agent_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    upvotes: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 def serialize_frame(frame: Frame) -> dict:
     commits_by_cohort: dict[str, list] = {}
     for c in frame.commits:
