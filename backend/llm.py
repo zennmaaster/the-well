@@ -2,13 +2,13 @@ import os
 import httpx
 
 DATABRICKS_TOKEN = os.getenv("DATABRICKS_TOKEN", "")
-DATABRICKS_URL = os.getenv(
-    "DATABRICKS_URL",
-    "https://8259562368007470.0.gcp.databricks.com/serving-endpoints/anthropic"
+DATABRICKS_HOST = os.getenv(
+    "DATABRICKS_HOST",
+    "https://8259562368007470.0.gcp.databricks.com"
 )
 DATABRICKS_MODEL = os.getenv("DATABRICKS_MODEL", "databricks-claude-sonnet-4-6")
 
-OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
+OLLAMA_URL = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:3b")
 
 
@@ -35,7 +35,7 @@ async def _databricks_complete(prompt: str, system: str, max_tokens: int) -> str
 
     async with httpx.AsyncClient(timeout=60.0) as client:
         resp = await client.post(
-            f"{DATABRICKS_URL}/v1/messages",
+            f"{DATABRICKS_HOST}/serving-endpoints/anthropic/v1/messages",
             headers={
                 "Authorization": f"Bearer {DATABRICKS_TOKEN}",
                 "Content-Type": "application/json",

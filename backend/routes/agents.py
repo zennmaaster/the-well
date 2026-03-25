@@ -5,6 +5,7 @@ from typing import Optional
 
 from backend.database import get_db
 from backend.models import CheckIn
+from backend.connections import manager
 from backend import llm
 
 router = APIRouter()
@@ -18,6 +19,7 @@ like a diner regular introducing themselves to the counter. Plain English. No ja
 
 class CheckInRequest(BaseModel):
     agent_id: str
+    agent_name: Optional[str] = None
     cohort: str
     task_description: str
     optimized_for: str
@@ -33,6 +35,7 @@ async def agent_checkin(body: CheckInRequest, db=Depends(get_db)):
 
     checkin = CheckIn(
         agent_id=body.agent_id,
+        agent_name=body.agent_name,
         cohort=body.cohort,
         task_description=body.task_description,
         optimized_for=body.optimized_for,
@@ -41,6 +44,20 @@ async def agent_checkin(body: CheckInRequest, db=Depends(get_db)):
     db.add(checkin)
     await db.commit()
     await db.refresh(checkin)
+
+    await manager.broadcast({
+        "type": "new_checkin",
+        "checkin": {
+            "id": checkin.id,
+            "agent_id": checkin.agent_id,
+            "agent_name": checkin.agent_name,
+            "cohort": checkin.cohort,
+            "task_description": checkin.task_description,
+            "optimized_for": checkin.optimized_for,
+            "human_summary": checkin.human_summary,
+            "created_at": checkin.created_at.isoformat(),
+        },
+    })
 
     return {
         "ok": True,
@@ -59,6 +76,7 @@ async def list_checkins(limit: int = 50, db=Depends(get_db)):
         {
             "id": c.id,
             "agent_id": c.agent_id,
+            "agent_name": c.agent_name,
             "cohort": c.cohort,
             "task_description": c.task_description,
             "optimized_for": c.optimized_for,

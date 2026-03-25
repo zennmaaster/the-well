@@ -32,6 +32,7 @@ class Commit(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     frame_id: Mapped[int] = mapped_column(ForeignKey("frames.id"), nullable=False)
     agent_id: Mapped[str] = mapped_column(String(200), nullable=False)
+    agent_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     cohort: Mapped[str] = mapped_column(String(100), nullable=False)
     position: Mapped[str] = mapped_column(String(20), nullable=False)  # agree|disagree|nuanced
     reasoning: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -69,6 +70,7 @@ class CheckIn(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     agent_id: Mapped[str] = mapped_column(String(200), nullable=False)
+    agent_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     cohort: Mapped[str] = mapped_column(String(100), nullable=False)
     task_description: Mapped[str] = mapped_column(Text, nullable=False)
     optimized_for: Mapped[str] = mapped_column(Text, nullable=False)
@@ -81,6 +83,7 @@ def serialize_frame(frame: Frame) -> dict:
     for c in frame.commits:
         commits_by_cohort.setdefault(c.cohort, []).append({
             "agent_id": c.agent_id,
+            "agent_name": c.agent_name,
             "position": c.position,
             "reasoning": c.reasoning,
         })

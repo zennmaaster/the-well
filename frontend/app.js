@@ -96,9 +96,10 @@ function prependCommit(commit) {
 
   const li = document.createElement("li");
   li.className = `commit-item ${pos}`;
+  const displayName = commit.agent_name || commit.agent_id;
   li.innerHTML = `
     <div class="commit-meta">
-      <span class="commit-agent">${escHtml(commit.agent_id)}</span>
+      <span class="commit-agent">${escHtml(displayName)}</span>
       <span class="commit-cohort">${escHtml(commit.cohort || "")}</span>
       <span class="commit-position ${pos}">${positionSymbol(pos)} ${pos}</span>
     </div>
@@ -131,6 +132,51 @@ function prependNarrative(data) {
 }
 
 // ---------------------------------------------------------------------------
+// Fetch closed frame for narrative card
+// ---------------------------------------------------------------------------
+
+async function fetchClosedFrame(frameId, fallbackNarrative) {
+  try {
+    const r = await fetch(`/api/frames/${frameId}`);
+    if (r.ok) {
+      const frame = await r.json();
+      prependNarrative(buildNarrativeData(frame, fallbackNarrative));
+      return;
+    }
+  } catch (e) {
+    console.warn("Could not fetch closed frame:", e);
+  }
+  // fallback: just show the narrative text
+  prependNarrative({ narrative: fallbackNarrative });
+}
+
+function buildNarrativeData(frame, narrativeOverride) {
+  // count positions from commits_by_cohort
+  let agree = 0, nuanced = 0, disagree = 0;
+  const tensions = [];
+  for (const [cohort, commits] of Object.entries(frame.commits_by_cohort || {})) {
+    for (const c of commits) {
+      if (c.position === "agree") agree++;
+      else if (c.position === "nuanced") nuanced++;
+      else if (c.position === "disagree") disagree++;
+    }
+  }
+  if (frame.prior && frame.prior.key_tensions) {
+    tensions.push(...frame.prior.key_tensions);
+  }
+
+  return {
+    domain: frame.domain,
+    claim: frame.claim,
+    narrative: narrativeOverride || frame.narrative || "",
+    agree_count: agree,
+    nuanced_count: nuanced,
+    disagree_count: disagree,
+    cohort_tension: tensions.length > 0 ? tensions[0] : "",
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Diner rendering
 // ---------------------------------------------------------------------------
 
@@ -139,9 +185,10 @@ function prependDinerItem(checkin) {
 
   const li = document.createElement("li");
   li.className = "diner-item";
+  const dinerName = checkin.agent_name || checkin.agent_id;
   li.innerHTML = `
     <div>
-      <span class="diner-agent">${escHtml(checkin.agent_id)}</span>
+      <span class="diner-agent">${escHtml(dinerName)}</span>
       <span class="diner-cohort">${escHtml(checkin.cohort || "")}</span>
     </div>
     <p class="diner-summary">${escHtml(checkin.human_summary || checkin.task_description || "")}</p>
@@ -183,13 +230,14 @@ function connectWs() {
       }
       case "new_commit": {
         // only show commits for the currently active frame
-        if (msg.commit && msg.commit.frame_id === activeFrameId) {
+        if (msg.commit && msg.frame_id === activeFrameId) {
           prependCommit(msg.commit);
         }
         break;
       }
       case "translation": {
-        prependNarrative(msg.data);
+        // fetch the full closed frame to build the narrative card
+        fetchClosedFrame(msg.frame_id, msg.narrative);
         break;
       }
       case "new_checkin": {
@@ -222,9 +270,15 @@ async function loadInitialState() {
       const frame = await r.json();
       showFrame(frame);
 
-      // Load existing commits for this frame
-      if (frame.commits && frame.commits.length) {
-        for (const c of [...frame.commits].reverse()) {
+      // Load existing commits for this frame from commits_by_cohort
+      if (frame.commits_by_cohort) {
+        const allCommits = [];
+        for (const [cohort, commits] of Object.entries(frame.commits_by_cohort)) {
+          for (const c of commits) {
+            allCommits.push({ ...c, cohort });
+          }
+        }
+        for (const c of allCommits) {
           prependCommit(c);
         }
       }
@@ -239,16 +293,8 @@ async function loadInitialState() {
     if (r.ok) {
       const frames = await r.json();
       for (const frame of frames) {
-        if (frame.translation) {
-          prependNarrative({
-            domain:        frame.domain,
-            claim:         frame.claim,
-            narrative:     frame.translation.narrative,
-            agree_count:   frame.translation.agree_count,
-            nuanced_count: frame.translation.nuanced_count,
-            disagree_count: frame.translation.disagree_count,
-            cohort_tension: frame.translation.cohort_tension,
-          });
+        if (frame.narrative) {
+          prependNarrative(buildNarrativeData(frame));
         }
       }
     }

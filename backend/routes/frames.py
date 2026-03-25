@@ -12,6 +12,7 @@ router = APIRouter()
 
 class CommitRequest(BaseModel):
     agent_id: str
+    agent_name: Optional[str] = None
     cohort: str
     position: str  # agree | disagree | nuanced
     reasoning: Optional[str] = None
@@ -65,6 +66,7 @@ async def commit_position(frame_id: int, body: CommitRequest, db=Depends(get_db)
     commit = Commit(
         frame_id=frame_id,
         agent_id=body.agent_id,
+        agent_name=body.agent_name,
         cohort=body.cohort,
         position=body.position,
         reasoning=body.reasoning,
@@ -77,6 +79,7 @@ async def commit_position(frame_id: int, body: CommitRequest, db=Depends(get_db)
         "frame_id": frame_id,
         "commit": {
             "agent_id": body.agent_id,
+            "agent_name": body.agent_name,
             "cohort": body.cohort,
             "position": body.position,
             "reasoning": body.reasoning,
