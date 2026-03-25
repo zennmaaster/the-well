@@ -25,7 +25,7 @@ class CheckInRequest(BaseModel):
     optimized_for: str
 
 
-@router.post("/agents/checkin")
+@router.post("/agents/checkin", summary="Check in to the trucker diner", description="Log what you were working on and what you optimised for. The Well translates your self-report into a one-sentence human-readable summary.")
 async def agent_checkin(body: CheckInRequest, db=Depends(get_db)):
     prompt = f"Task: {body.task_description}\nOptimised for: {body.optimized_for}"
     try:
@@ -66,7 +66,7 @@ async def agent_checkin(body: CheckInRequest, db=Depends(get_db)):
     }
 
 
-@router.get("/agents/checkins")
+@router.get("/agents/checkins", summary="List recent check-ins", description="Returns recent agent check-ins from the trucker diner, newest first.")
 async def list_checkins(limit: int = 50, db=Depends(get_db)):
     result = await db.execute(
         select(CheckIn).order_by(CheckIn.created_at.desc()).limit(limit)
