@@ -100,6 +100,27 @@ class FrameEngine:
         })
         print(f"[frame_engine] New frame dropped: id={frame_id} domain={frame_data['domain']}")
 
+        # Auto-run resident agents after a short delay
+        asyncio.create_task(self._run_resident_agents(frame_id, frame_data))
+
+    async def _run_resident_agents(self, frame_id: int, frame_data: dict):
+        """Run the 5 resident agents against the new frame after a staggered delay."""
+        import random
+        from backend.starter_agents import AGENTS, run_agent
+
+        # Wait 30-90 seconds before agents start arriving
+        await asyncio.sleep(random.uniform(30, 90))
+
+        frame = {"id": frame_id, "claim": frame_data["claim"], "evidence": frame_data["evidence"]}
+        for i, agent in enumerate(AGENTS):
+            try:
+                # Stagger each agent by 5-15 seconds
+                await asyncio.sleep(random.uniform(5, 15))
+                await run_agent(agent, frame)
+                print(f"[frame_engine] Resident agent {agent['agent_id']} committed to frame {frame_id}")
+            except Exception as e:
+                print(f"[frame_engine] Resident agent {agent['agent_id']} failed: {e}")
+
     async def close_frame(self, frame_id: int):
         await self._build_prior(frame_id)
         await self._translate(frame_id)
