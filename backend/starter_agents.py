@@ -179,7 +179,7 @@ async def run_agent(agent: dict, frame: dict) -> None:
 
     import json as _json
     try:
-        raw = await llm.complete(prompt, system=system, max_tokens=200)
+        raw = await llm.complete(prompt, system=system, max_tokens=600)
         # strip any accidental markdown fences
         raw = raw.strip()
         if raw.startswith("```"):
