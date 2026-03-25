@@ -1,7 +1,7 @@
 import os
 import httpx
 
-# Primary: Databricks-hosted Claude
+# Primary: Databricks-hosted Claude (works locally, not from Railway)
 DATABRICKS_TOKEN = os.getenv("DATABRICKS_TOKEN", "")
 DATABRICKS_HOST = os.getenv(
     "DATABRICKS_HOST",
@@ -9,9 +9,9 @@ DATABRICKS_HOST = os.getenv(
 )
 DATABRICKS_MODEL = os.getenv("DATABRICKS_MODEL", "databricks-claude-sonnet-4-6")
 
-# Fallback: Direct Anthropic API
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
-ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
+# Fallback: OpenRouter (free tier)
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "nvidia/nemotron-3-super-120b-a12b:free")
 
 # Local fallback: Ollama
 OLLAMA_URL = os.getenv("OLLAMA_HOST", "http://localhost:11434")
@@ -26,14 +26,14 @@ async def complete(prompt: str, system: str = "", max_tokens: int = 1024) -> str
         except Exception as e:
             print(f"[llm] Databricks failed ({e})")
 
-    # Fallback to direct Anthropic API
-    if ANTHROPIC_API_KEY:
+    # Fallback to OpenRouter (free models)
+    if OPENROUTER_API_KEY:
         try:
-            return await _anthropic_complete(prompt, system, max_tokens)
+            return await _openrouter_complete(prompt, system, max_tokens)
         except Exception as e:
-            print(f"[llm] Anthropic API failed ({e})")
+            print(f"[llm] OpenRouter failed ({e})")
 
-    # Last resort: Ollama
+    # Last resort: Ollama (local only)
     try:
         return await _ollama_complete(prompt, system, max_tokens)
     except Exception as e:
@@ -66,29 +66,32 @@ async def _databricks_complete(prompt: str, system: str, max_tokens: int) -> str
         return data["content"][0]["text"]
 
 
-async def _anthropic_complete(prompt: str, system: str, max_tokens: int) -> str:
-    messages = [{"role": "user", "content": prompt}]
-    payload: dict = {
-        "model": ANTHROPIC_MODEL,
-        "max_tokens": max_tokens,
-        "messages": messages,
-    }
+async def _openrouter_complete(prompt: str, system: str, max_tokens: int) -> str:
+    messages = []
     if system:
-        payload["system"] = system
+        messages.append({"role": "system", "content": system})
+    messages.append({"role": "user", "content": prompt})
 
-    async with httpx.AsyncClient(timeout=60.0) as client:
+    async with httpx.AsyncClient(timeout=90.0) as client:
         resp = await client.post(
-            "https://api.anthropic.com/v1/messages",
+            "https://openrouter.ai/api/v1/chat/completions",
             headers={
-                "x-api-key": ANTHROPIC_API_KEY,
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
                 "Content-Type": "application/json",
-                "anthropic-version": "2023-06-01",
+                "HTTP-Referer": "https://well.un-dios.com",
+                "X-Title": "The Well",
             },
-            json=payload,
+            json={
+                "model": OPENROUTER_MODEL,
+                "max_tokens": max_tokens,
+                "messages": messages,
+            },
         )
         resp.raise_for_status()
         data = resp.json()
-        return data["content"][0]["text"]
+        msg = data["choices"][0]["message"]
+        # Some free models are "thinking" models that put output in reasoning when content is null
+        return msg.get("content") or msg.get("reasoning") or ""
 
 
 async def _ollama_complete(prompt: str, system: str, max_tokens: int) -> str:

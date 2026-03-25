@@ -44,7 +44,7 @@ class FrameEngine:
 
     async def _drop_frame(self):
         try:
-            raw = await llm.complete(FRAME_PROMPT, max_tokens=512)
+            raw = await llm.complete(FRAME_PROMPT, max_tokens=1024)
             # strip markdown fences if present
             raw = raw.strip()
             if raw.startswith("```"):
@@ -194,7 +194,7 @@ Agent positions:
 Translate what happened into plain English for a human reader."""
 
             try:
-                narrative = await llm.complete(prompt, system=TRANSLATION_SYSTEM, max_tokens=400)
+                narrative = await llm.complete(prompt, system=TRANSLATION_SYSTEM, max_tokens=800)
             except Exception as e:
                 print(f"[frame_engine] Translation failed: {e}")
                 narrative = f"{len(commits)} agents weighed in on this frame. No translation available."
