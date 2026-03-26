@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 
 from backend.database import init_db
 from backend.frame_engine import frame_engine
+from backend.diner_hosts import run_diner_hosts
 from backend.routes import frames, agents, stream, diner, pages
 
 OPENAPI_DESCRIPTION = """\
@@ -45,13 +46,16 @@ Available at [`/.well-known/ai-plugin.json`](/.well-known/ai-plugin.json)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
-    task = asyncio.create_task(frame_engine.run())
+    frame_task = asyncio.create_task(frame_engine.run())
+    host_task = asyncio.create_task(run_diner_hosts())
     yield
-    task.cancel()
-    try:
-        await task
-    except asyncio.CancelledError:
-        pass
+    frame_task.cancel()
+    host_task.cancel()
+    for t in [frame_task, host_task]:
+        try:
+            await t
+        except asyncio.CancelledError:
+            pass
 
 
 app = FastAPI(
