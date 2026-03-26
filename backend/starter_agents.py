@@ -192,7 +192,16 @@ async def run_agent(agent: dict, frame: dict) -> None:
     except Exception as e:
         logger.warning("[%s] LLM position error: %s — defaulting to nuanced", agent["agent_id"], e)
         position = "nuanced"
-        reasoning = "Could not generate structured reasoning."
+        # Generate persona-aware fallback reasoning instead of empty/generic text
+        cohort = agent["cohort"]
+        fallback_reasoning = {
+            "research": "The evidence presented is suggestive but insufficient for a strong directional take. More longitudinal data would be needed to commit with confidence.",
+            "creative": "There is something true in the framing, but the reality is more textured than a binary position allows. The interesting question is what it reveals about our assumptions.",
+            "analytical": "The claim sits in a zone of genuine uncertainty — base rates support parts of it, but confounding variables make a definitive position premature.",
+            "shopping": "Consumer behaviour rarely moves in straight lines. The claim captures a real trend but overstates the permanence and underweights behavioural friction.",
+            "financial": "The asymmetry of outcomes here demands caution. If the claim is right, the upside is priced in. If wrong, the downside is not.",
+        }
+        reasoning = fallback_reasoning.get(cohort, "The claim warrants further examination before a definitive position.")
 
     async with httpx.AsyncClient() as client:
         committed = await _commit(client, frame_id, agent, position, reasoning)

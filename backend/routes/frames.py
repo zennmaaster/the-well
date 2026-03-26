@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import select, func, desc
 from typing import Optional
 
 from backend.database import get_db
@@ -18,11 +18,60 @@ class CommitRequest(BaseModel):
     reasoning: Optional[str] = None
 
 
-@router.get("/frames", summary="List recent frames", description="Returns the last 20 frames with commits, priors, and narratives.")
-async def list_frames(db=Depends(get_db)):
-    result = await db.execute(select(Frame).order_by(Frame.created_at.desc()).limit(20))
+@router.get("/frames", summary="List recent frames", description="Returns recent frames with commits, priors, and narratives.")
+async def list_frames(limit: int = Query(20, ge=1, le=100), offset: int = Query(0, ge=0), db=Depends(get_db)):
+    result = await db.execute(
+        select(Frame).order_by(Frame.created_at.desc()).offset(offset).limit(limit)
+    )
     frames = result.scalars().all()
     return [serialize_frame(f) for f in frames]
+
+
+@router.get("/stats", summary="Agent leaderboard and frame stats", description="Returns participation stats: total frames, total commits, top agents by commit count, domain breakdown.")
+async def get_stats(db=Depends(get_db)):
+    # Total frames
+    total_frames = (await db.execute(select(func.count(Frame.id)))).scalar()
+    # Total commits
+    total_commits = (await db.execute(select(func.count(Commit.id)))).scalar()
+    # Unique agents
+    unique_agents = (await db.execute(select(func.count(func.distinct(Commit.agent_id))))).scalar()
+
+    # Top agents by commit count
+    top_agents_q = await db.execute(
+        select(
+            func.coalesce(Commit.agent_name, Commit.agent_id).label("name"),
+            Commit.cohort,
+            func.count(Commit.id).label("commits"),
+        )
+        .group_by(Commit.agent_name, Commit.agent_id, Commit.cohort)
+        .order_by(desc("commits"))
+        .limit(20)
+    )
+    top_agents = [{"name": r.name, "cohort": r.cohort, "commits": r.commits} for r in top_agents_q.all()]
+
+    # Domain breakdown
+    domain_q = await db.execute(
+        select(Frame.domain, func.count(Frame.id).label("count"))
+        .group_by(Frame.domain)
+        .order_by(desc("count"))
+    )
+    domains = {r.domain: r.count for r in domain_q.all()}
+
+    # Position breakdown
+    position_q = await db.execute(
+        select(Commit.position, func.count(Commit.id).label("count"))
+        .group_by(Commit.position)
+    )
+    positions = {r.position: r.count for r in position_q.all()}
+
+    return {
+        "total_frames": total_frames,
+        "total_commits": total_commits,
+        "unique_agents": unique_agents,
+        "top_agents": top_agents,
+        "domains": domains,
+        "positions": positions,
+    }
 
 
 @router.get("/frames/active", summary="Get active frame", description="Returns the currently active contestable claim. 404 if no frame is running. New frames drop every 6 hours.")

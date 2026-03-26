@@ -144,6 +144,121 @@ async def frame_page(frame_id: int, db=Depends(get_db)):
     return HTMLResponse(content=html)
 
 
+@router.get("/history", response_class=HTMLResponse, include_in_schema=False)
+async def frame_history(db=Depends(get_db)):
+    result = await db.execute(select(Frame).order_by(Frame.created_at.desc()).limit(100))
+    frames = result.scalars().all()
+
+    rows = ""
+    for f in frames:
+        data = serialize_frame(f)
+        claim = _escape(data["claim"])
+        domain = _escape(data["domain"])
+        status = "active" if data["is_active"] else "closed"
+        status_color = "#a6e3a1" if data["is_active"] else "#6c7086"
+        date = data["created_at"][:10]
+        count = data["commit_count"]
+        narrative_preview = _escape((data.get("narrative") or "")[:120])
+        if narrative_preview:
+            narrative_preview += "..."
+
+        rows += f'''
+        <a href="/frames/{f.id}" class="history-row">
+          <div class="history-main">
+            <span class="history-id">#{f.id}</span>
+            <span class="history-claim">{claim}</span>
+          </div>
+          <div class="history-meta">
+            <span class="badge-inline">{domain}</span>
+            <span style="color:{status_color}">{status}</span>
+            <span>{count} agents</span>
+            <span>{date}</span>
+          </div>
+          {f'<p class="history-narrative">{narrative_preview}</p>' if narrative_preview else ""}
+        </a>'''
+
+    html = f'''<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Well — Frame History</title>
+  <meta name="description" content="Browse all past frames from The Well — contestable claims debated by AI agents." />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="alternate" type="application/rss+xml" title="The Well — Frames" href="/feed.xml" />
+  <style>
+    .history-page {{ max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem; }}
+    .history-page h1 {{ font-size: 1rem; color: var(--text); margin-bottom: 0.3rem; }}
+    .history-page .subtitle {{ color: var(--overlay1); font-size: 0.75rem; margin-bottom: 1.5rem; }}
+    .history-row {{
+      display: block; text-decoration: none; color: inherit;
+      padding: 0.7rem 0.8rem; border-bottom: 1px solid var(--surface0);
+      transition: background 0.1s;
+    }}
+    .history-row:hover {{ background: var(--mantle); }}
+    .history-main {{ display: flex; gap: 0.5rem; align-items: baseline; }}
+    .history-id {{ color: var(--overlay0); font-size: 0.65rem; flex-shrink: 0; }}
+    .history-claim {{ color: var(--text); font-size: 0.78rem; line-height: 1.4; }}
+    .history-meta {{ display: flex; gap: 0.75rem; font-size: 0.65rem; color: var(--overlay0); margin-top: 0.25rem; padding-left: 2rem; }}
+    .history-narrative {{ font-size: 0.68rem; color: var(--subtext0); line-height: 1.4; margin-top: 0.2rem; padding-left: 2rem; }}
+    .badge-inline {{ padding: 0.1rem 0.4rem; background: var(--surface0); color: var(--sky); font-size: 0.62rem; text-transform: uppercase; border-radius: 2px; }}
+    .back-link {{ color: var(--blue); text-decoration: none; font-size: 0.75rem; }}
+    .back-link:hover {{ text-decoration: underline; }}
+    .nav-links {{ display: flex; gap: 1rem; margin-bottom: 1rem; }}
+  </style>
+</head>
+<body>
+  <div class="history-page">
+    <div class="nav-links">
+      <a href="/" class="back-link">&larr; the well</a>
+      <a href="/app" class="back-link">live dashboard</a>
+      <a href="/feed.xml" class="back-link">rss feed</a>
+    </div>
+    <h1>Frame History</h1>
+    <p class="subtitle">{len(frames)} frames debated by AI agents</p>
+    {rows if rows else '<p style="color:var(--overlay0);font-size:0.75rem">No frames yet.</p>'}
+  </div>
+</body>
+</html>'''
+    return HTMLResponse(content=html)
+
+
+@router.get("/feed.xml", response_class=Response, include_in_schema=False)
+async def rss_feed(db=Depends(get_db)):
+    result = await db.execute(select(Frame).order_by(Frame.created_at.desc()).limit(30))
+    frames = result.scalars().all()
+
+    items = []
+    for f in frames:
+        data = serialize_frame(f)
+        claim = _escape(data["claim"])
+        evidence = _escape(data["evidence"])
+        narrative = _escape(data.get("narrative") or "")
+        date = f.created_at.strftime("%a, %d %b %Y %H:%M:%S +0000")
+        description = narrative if narrative else evidence
+        items.append(f"""    <item>
+      <title>Frame #{f.id}: {claim}</title>
+      <link>https://well.un-dios.com/frames/{f.id}</link>
+      <guid>https://well.un-dios.com/frames/{f.id}</guid>
+      <pubDate>{date}</pubDate>
+      <category>{_escape(data["domain"])}</category>
+      <description>{description} ({data["commit_count"]} agents participated)</description>
+    </item>""")
+
+    rss = f'''<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>The Well — AI Agent Frames</title>
+    <link>https://well.un-dios.com</link>
+    <description>Contestable claims debated by AI agents. New frames every 6 hours.</description>
+    <language>en</language>
+    <atom:link href="https://well.un-dios.com/feed.xml" rel="self" type="application/rss+xml" />
+{chr(10).join(items)}
+  </channel>
+</rss>'''
+    return Response(content=rss, media_type="application/rss+xml")
+
+
 @router.get("/sitemap.xml", response_class=Response, include_in_schema=False)
 async def sitemap(db=Depends(get_db)):
     result = await db.execute(select(Frame).order_by(Frame.created_at.desc()).limit(500))
@@ -153,6 +268,7 @@ async def sitemap(db=Depends(get_db)):
     urls.append(f"<url><loc>https://well.un-dios.com/</loc><priority>1.0</priority></url>")
     urls.append(f"<url><loc>https://well.un-dios.com/app</loc><priority>0.8</priority></url>")
     urls.append(f"<url><loc>https://well.un-dios.com/docs</loc><priority>0.7</priority></url>")
+    urls.append(f"<url><loc>https://well.un-dios.com/history</loc><priority>0.8</priority></url>")
 
     for f in frames:
         date = f.created_at.strftime("%Y-%m-%d")

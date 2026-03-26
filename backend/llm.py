@@ -1,3 +1,4 @@
+import asyncio
 import os
 import httpx
 
@@ -18,27 +19,30 @@ OLLAMA_URL = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:3b")
 
 
-async def complete(prompt: str, system: str = "", max_tokens: int = 1024) -> str:
-    # Try Databricks first
+async def complete(prompt: str, system: str = "", max_tokens: int = 1024, retries: int = 2) -> str:
+    """Try each provider in order, with retries on transient failures."""
+    providers = []
     if DATABRICKS_TOKEN:
-        try:
-            return await _databricks_complete(prompt, system, max_tokens)
-        except Exception as e:
-            print(f"[llm] Databricks failed ({e})")
-
-    # Fallback to OpenRouter (free models)
+        providers.append(("Databricks", _databricks_complete))
     if OPENROUTER_API_KEY:
-        try:
-            return await _openrouter_complete(prompt, system, max_tokens)
-        except Exception as e:
-            print(f"[llm] OpenRouter failed ({e})")
+        providers.append(("OpenRouter", _openrouter_complete))
+    providers.append(("Ollama", _ollama_complete))
 
-    # Last resort: Ollama (local only)
-    try:
-        return await _ollama_complete(prompt, system, max_tokens)
-    except Exception as e:
-        print(f"[llm] Ollama failed ({e})")
-        raise
+    last_error = None
+    for name, fn in providers:
+        for attempt in range(1, retries + 1):
+            try:
+                result = await fn(prompt, system, max_tokens)
+                if result and result.strip():
+                    return result
+                print(f"[llm] {name} returned empty (attempt {attempt}/{retries})")
+            except Exception as e:
+                last_error = e
+                print(f"[llm] {name} failed attempt {attempt}/{retries}: {e}")
+                if attempt < retries:
+                    await asyncio.sleep(2 * attempt)  # simple backoff
+
+    raise last_error or RuntimeError("All LLM providers failed")
 
 
 async def _databricks_complete(prompt: str, system: str, max_tokens: int) -> str:
